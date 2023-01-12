@@ -1,5 +1,6 @@
 doctrine:
     dbal:
+        unix_socket: /Applications/MAMP/tmp/mysql/mysql.sock
         url: '%env(resolve:DATABASE_URL)%'
 
         # IMPORTANT: You MUST configure your server version,

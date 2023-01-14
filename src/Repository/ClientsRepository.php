@@ -56,6 +56,23 @@ class ClientsRepository extends ServiceEntityRepository implements PasswordUpgra
         $this->save($user, true);
     }
 
+    /**
+     * Méthode pour paginer les resultats de tous les clients
+     *
+     * @param  mixed $page
+     * @param  mixed $limit
+     * @return void
+     */
+    public function findAllPaginated($page, $limit)
+    {
+        $qb = $this->createQueryBuilder('b')
+            ->setFirstResult(($page - 1) * $limit)
+            ->setMaxResults($limit);
+
+            return $qb->getQuery()->getResult();
+    }
+
+
 //    /**
 //     * @return Clients[] Returns an array of Clients objects
 //     */

@@ -73,7 +73,7 @@ class ProductController extends AbstractController
 
     
     /**
-     * Cette méthode nous permet de supprimer un produit par rapport a son id
+     * Cette méthode nous permet de supprimer un produit par rapport à son id
      *
      * @param  mixed $product
      * @param  mixed $em
@@ -127,5 +127,50 @@ class ProductController extends AbstractController
         $location = $urlGenerator->generate('detailProduct', ['id' => $product->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
 
         return new JsonResponse($jsonProduct, Response::HTTP_CREATED, ["location" => $location], true);
+    }
+    
+    /**
+     * Cette méthode nous permet de modifier un produit via son id
+     *
+     * @param Request $request
+     * @param SerializerInterface $serializer
+     * @param Product $currentProduct
+     * @param EntityManagerInterface $em
+     * @param ValidatorInterface $validator
+     * @param TagAwareCacheInterface $cache
+     * @return JsonResponse
+     */
+    #[Route('api/products/{id}', name: 'updateProduct', methods: ['PUT'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour modifier un produit')]
+    public function updateProduct(
+        Request $request,
+        SerializerInterface $serializer,
+        Product $currentProduct,
+        EntityManagerInterface $em,
+        ValidatorInterface $validator,
+        TagAwareCacheInterface $cache
+    ): JsonResponse
+    {
+        $newProduct = $serializer->deserialize($request->getContent(), Product::class, 'json');
+
+        $currentProduct->setName($newProduct->getName());
+        $currentProduct->setBrand($newProduct->getBrand());
+        $currentProduct->setReleaseDate($newProduct->getReleaseDate());
+        $currentProduct->setOperatingSystem($newProduct->getOperatingSystem());
+        $currentProduct->setPrice($newProduct->getPrice());
+
+        // On vérifie les erreurs
+        $error = $validator->validate($currentProduct);
+        if($error->count() > 0) {
+            return new JsonResponse($serializer->serialize($error,'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
+        }
+
+        $em->persist($currentProduct);
+        $em->flush();
+
+        // On vide le cache
+        $cache->invalidateTags(['productCache']);
+
+        return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
     }
 }

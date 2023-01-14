@@ -19,22 +19,29 @@ class Product
 
     #[ORM\Column(length: 255)]
     #[Groups(['getProducts'])]
+    #[Assert\NotBlank(message: "Le nom du produit est obligatoire")]
+    #[Assert\Length(min: 2, max: 255, minMessage: "Le nom doit faire au minimum {{ limit }} caractères", maxMessage: "Le nom ne peut pas faire plus de {{ limit }} caractères")]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(['getProducts'])]
+    #[Assert\NotBlank(message: "La marque du produit est obligatoire")]
+    #[Assert\Length(min: 2, max: 255, minMessage: "La marque doit faire au minimum {{ limit }} caractères", maxMessage: "La marque ne peut pas faire plus de {{ limit }} caractères")]
     private ?string $brand = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     #[Groups(['getProducts'])]
+    #[Assert\NotBlank(message: 'Veuillez renseigner la date de sortie du produit')]
     private ?\DateTimeInterface $releaseDate = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(['getProducts'])]
+    #[Assert\NotBlank(message: 'veuillez renseigner le système (OS) de l\'appareil')]
     private ?string $operatingSystem = null;
 
     #[ORM\Column]
     #[Groups(['getProducts'])]
+    #[Assert\NotNull(message: 'Veuillez renseigner le prix de l\'appareil')]
     private ?int $Price = null;
 
     public function getId(): ?int

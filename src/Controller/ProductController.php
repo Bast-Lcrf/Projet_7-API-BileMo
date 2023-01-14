@@ -79,7 +79,7 @@ class ProductController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/api/products/{id}', name: 'deleteProduct', methods: ['DELETE'])]
-    //#[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour supprimer un produit')]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour supprimer un produit')]
     public function deleteProduct(Product $product, EntityManagerInterface $em, TagAwareCacheInterface $cache): JsonResponse
     {
         $cache->invalidateTags(['productCache']);

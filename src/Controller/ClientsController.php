@@ -4,15 +4,17 @@ namespace App\Controller;
 
 use App\Entity\Clients;
 use App\Repository\ClientsRepository;
-use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
+use Doctrine\ORM\EntityManagerInterface;
+use JMS\Serializer\SerializationContext;
+use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class ClientsController extends AbstractController
 {
@@ -65,4 +67,23 @@ class ClientsController extends AbstractController
         $jsonClient = $serializer->serialize($clients, 'json', $context);
         return new JsonResponse($jsonClient, Response::HTTP_OK, [], true);
     }
+
+    /**
+     * Cette méthode nous permet de supprimer un client via son id
+     * 
+     * @param  Clients $clients
+     * @param  EntityManagerInterface $em
+     * @param  TagAwareCacheInterface $cache
+     * @return JsonResponse
+     */
+    #[Route('/api/clients/{id}', name: 'deleteClient', methods: ['DELETE'])] 
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour supprimer un produit')]
+    public function deleteClient(Clients $clients, EntityManagerInterface $em, TagAwareCacheInterface $cache): JsonResponse
+    {
+        $cache->invalidateTags(['clientsCache']);
+        $em->remove($clients);
+        $em->flush();
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+    
 }

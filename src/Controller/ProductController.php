@@ -81,12 +81,51 @@ class ProductController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/api/products/{id}', name: 'deleteProduct', methods: ['DELETE'])]
-    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour supprimer un produit')]
+    //#[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour supprimer un produit')]
     public function deleteProduct(Product $product, EntityManagerInterface $em, TagAwareCacheInterface $cache): JsonResponse
     {
         $cache->invalidateTags(['productCache']);
         $em->remove($product);
         $em->flush();
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+    
+    /**
+     * Cette méthode nous permet de créer un nouveau produit
+     *
+     * @param Request $request
+     * @param SerializerInterface $serializer
+     * @param EntityManagerInterface $em
+     * @param UrlGeneratorInterface $urlGenerator
+     * @param ValidatorInterface $validator
+     * @return JsonResponse
+     */
+    #[Route('api/products', name: 'createProduct', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour ajouter un produit')]
+    public function createProduct(
+        Request $request,
+        SerializerInterface $serializer,
+        EntityManagerInterface $em,
+        UrlGeneratorInterface $urlGenerator,
+        ValidatorInterface $validator
+    ): JsonResponse
+    {
+        $product = $serializer->deserialize($request->getContent(), Product::class, 'json');
+
+        // On vérifie les erreurs
+        $error = $validator->validate($product);
+        if($error->count() > 0) {
+            return new JsonResponse($serializer->serialize($error, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
+        }
+
+        $em->persist($product);
+        $em->flush();
+
+        $context = SerializationContext::create()->setGroups('getProducts');
+        $jsonProduct = $serializer->serialize($product, 'json', $context);
+
+        $location = $urlGenerator->generate('detailProduct', ['id' => $product->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
+
+        return new JsonResponse($jsonProduct, Response::HTTP_CREATED, ["location" => $location], true);
     }
 }

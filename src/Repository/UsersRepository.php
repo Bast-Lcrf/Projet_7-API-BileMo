@@ -56,6 +56,22 @@ class UsersRepository extends ServiceEntityRepository implements PasswordUpgrade
         $this->save($user, true);
     }
 
+    /**
+     * Méthode pour paginer les resultats de des utilisateurs
+     *
+     * @param  int $page
+     * @param  int $limit
+     * @return void
+     */
+    public function findAllPaginated(int $page, int $limit)
+    {
+        $qb = $this->createQueryBuilder('b')
+            ->setFirstResult(($page - 1) * $limit)
+            ->setMaxResults($limit);
+
+            return $qb->getQuery()->getResult();
+    }
+
 //    /**
 //     * @return Users[] Returns an array of Users objects
 //     */

@@ -42,11 +42,11 @@ class ProductRepository extends ServiceEntityRepository
     /**
      * Méthode pour paginer les resultats de tous les produits
      *
-     * @param  mixed $page
-     * @param  mixed $limit
+     * @param  int $page
+     * @param  int $limit
      * @return void
      */
-    public function findAllPaginated($page, $limit)
+    public function findAllPaginated(int $page, int $limit)
     {
         $qb = $this->createQueryBuilder('b')
             ->setFirstResult(($page - 1) * $limit)

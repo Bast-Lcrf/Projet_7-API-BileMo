@@ -21,7 +21,7 @@ class Clients implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 180, unique: true)]
     #[Groups(['getClients'])]
-    #[Assert\NotBlank('Veuillez renseigner l\'email du client')]
+    #[Assert\NotBlank(message:'Veuillez renseigner l\'email du client')]
     #[Assert\Email()]
     #[Length(min: 2, max: 180, minMessage: 'Ce champ doit au contenir au moins {{ limit }} caractères', maxMessage: 'Ce champ ne peut contenir plus de {{ limit }} caractères')]
     private ?string $email = null;
@@ -43,7 +43,6 @@ class Clients implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column]
     #[Groups(['getClients'])]
-    #[Assert\NotBlank(message: 'Veuillez renseigner la date d\'inscription du client')]
     private ?\DateTimeImmutable $createdAt = null;
 
     public function getId(): ?int

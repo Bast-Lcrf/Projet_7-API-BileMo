@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Clients;
 use App\Repository\ClientsRepository;
+use DateTimeImmutable;
 use JMS\Serializer\SerializerInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use JMS\Serializer\SerializationContext;
@@ -15,6 +16,9 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class ClientsController extends AbstractController
 {
@@ -77,13 +81,64 @@ class ClientsController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/api/clients/{id}', name: 'deleteClient', methods: ['DELETE'])] 
-    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour supprimer un produit')]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour supprimer un client')]
     public function deleteClient(Clients $clients, EntityManagerInterface $em, TagAwareCacheInterface $cache): JsonResponse
     {
         $cache->invalidateTags(['clientsCache']);
         $em->remove($clients);
         $em->flush();
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * Cette méthode nous permet de créer un nouveau client
+     *
+     * @param Request $request
+     * @param SerializerInterface $serializer
+     * @param EntityManagerInterface $em
+     * @param UrlGeneratorInterface $urlGenerator
+     * @param ValidatorInterface $validator
+     * @param UserPasswordHasherInterface $clientHash
+     * @return JsonResponse
+     */
+    #[Route('/api/clients', name: 'createClient', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour ajouter un nouveau client')] 
+    public function createClient(
+        Request $request,
+        SerializerInterface $serializer,
+        EntityManagerInterface $em,
+        UrlGeneratorInterface $urlGenerator,
+        ValidatorInterface $validator,
+        UserPasswordHasherInterface $clientHash
+    ): JsonResponse
+    {
+        $client = $serializer->deserialize($request->getContent(), Clients::class, 'json');
+
+        // On vérifie les erreurs
+        $error = $validator->validate($client);
+        if($error->count() > 0) {
+            return new JsonResponse($serializer->serialize($error, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
+        }
+
+        // On hash le mot de passe renseigné
+        $pass = $clientHash->hashPassword($client, $client->getPassword());
+        $client->setPassword($pass);
+
+        // on ajoute le role
+        $client->setRoles(['ROLE_CLIENT']);
+
+        // On ajoute la date de création du compte
+        $client->setCreatedAt(new \DateTimeImmutable('Europe/Paris'));
+
+        $em->persist($client);
+        $em->flush();
+
+        $context = SerializationContext::create()->setGroups('getClients');
+        $jsonClient = $serializer->serialize($client, 'json', $context);
+
+        $location = $urlGenerator->generate('detailClient', ['id' => $client->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
+
+        return new JsonResponse($jsonClient, Response::HTTP_CREATED, ["location" => $location], true);
     }
     
 }

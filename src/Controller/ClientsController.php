@@ -31,6 +31,7 @@ class ClientsController extends AbstractController
      * @param ClientsRepository $clientsRepository
      * @param SerializerInterface $serializer
      * @param TagAwareCacheInterface $cache
+     * 
      * @return JsonResponse
      */
     #[Route('/api/clients', name: 'clients', methods: ['GET'])] 
@@ -60,8 +61,9 @@ class ClientsController extends AbstractController
     /**
      * Cette méthode nous permet de récupérer le detail d'un client via son id
      *
-     * @param  mixed $clients
-     * @param  mixed $serializer
+     * @param  Clients $clients
+     * @param  SerializerInterface $serializer
+     * 
      * @return JsonResponse
      */
     #[Route('/api/clients/{id}', name: 'detailClient', methods: ['GET'])]  
@@ -78,6 +80,7 @@ class ClientsController extends AbstractController
      * @param  Clients $clients
      * @param  EntityManagerInterface $em
      * @param  TagAwareCacheInterface $cache
+     * 
      * @return JsonResponse
      */
     #[Route('/api/clients/{id}', name: 'deleteClient', methods: ['DELETE'])] 
@@ -99,6 +102,7 @@ class ClientsController extends AbstractController
      * @param UrlGeneratorInterface $urlGenerator
      * @param ValidatorInterface $validator
      * @param UserPasswordHasherInterface $clientHash
+     * 
      * @return JsonResponse
      */
     #[Route('/api/clients', name: 'createClient', methods: ['POST'])]
@@ -139,6 +143,51 @@ class ClientsController extends AbstractController
         $location = $urlGenerator->generate('detailClient', ['id' => $client->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
 
         return new JsonResponse($jsonClient, Response::HTTP_CREATED, ["location" => $location], true);
+    }
+ 
+    /**
+     * Cette méthode nous permet de mettre à jour l'email et le nom du client 
+     * (son role, son mdp et la date de création reste inchangé)
+     * 
+     * @param Request $request
+     * @param SerializerInterface $serializer
+     * @param Clients $currentClient
+     * @param EntityManagerInterface $em
+     * @param ValidatorInterface $validator
+     * @param TagAwareCacheInterface $cache
+     *
+     * @return JsonResponse
+     */
+    #[Route('/api/clients/{id}', name: 'updateClient', methods: ['PUT'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour mettre à jour un client')]
+    public function updateClient(
+        Request $request,
+        SerializerInterface $serializer,
+        Clients $currentClient,
+        EntityManagerInterface $em,
+        ValidatorInterface $validator,
+        TagAwareCacheInterface $cache
+    ): JsonResponse
+    {
+        $updateClient = $serializer->deserialize($request->getContent(), Clients::class, 'json');
+
+        // On update les informations
+        $currentClient->setEmail($updateClient->getEmail());
+        $currentClient->setName($updateClient->getName());
+
+        // On vérifie les erreurs
+        $error = $validator->validate($currentClient);
+        if($error->count() > 0) {
+            return new JsonResponse($serializer->serialize($error, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
+        }
+
+        $em->persist($currentClient);
+        $em->flush();
+
+        // On vide la cache
+        $cache->invalidateTags(['clientsCache']);
+
+        return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
     }
     
 }

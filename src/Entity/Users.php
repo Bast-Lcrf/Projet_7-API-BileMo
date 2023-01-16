@@ -2,30 +2,38 @@
 
 namespace App\Entity;
 
-use App\Repository\ClientsRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
+use App\Repository\UsersRepository;
 use Doctrine\ORM\Mapping as ORM;
+use JMS\Serializer\Annotation\Groups;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
-use JMS\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
-#[ORM\Entity(repositoryClass: ClientsRepository::class)]
-class Clients implements UserInterface, PasswordAuthenticatedUserInterface
+#[ORM\Entity(repositoryClass: UsersRepository::class)]
+class Users implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['getClients'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
-    #[Groups(['getClients'])]
-    #[Assert\NotBlank(message:'Veuillez renseigner l\'email du client')]
-    #[Assert\Email()]
-    #[Assert\Length(min: 2, max: 180, minMessage: 'Ce champ doit au contenir au moins {{ limit }} caractères', maxMessage: 'Ce champ ne peut contenir plus de {{ limit }} caractères')]
+    #[Groups(['getAllUsers'])]
+    #[Assert\NotBlank(message: "L\'adresse Email est obligatoire")]
+    #[Assert\Length(min: 2, max: 180, minMessage: 'L\'adresse email doit faire au minimum {{ limit }} caractères', maxMessage: 'L\'adresse email ne doit pas faire plus de {{ limit }} caractères')]
     private ?string $email = null;
+
+    #[ORM\Column(length: 255)]
+    #[Groups(['getAllUsers'])]
+    #[Assert\NotBlank(message: "Ce champ est obligatoire")]
+    #[Assert\Length(min: 2, max: 180, minMessage: 'Le nom doit faire au minimum {{ limit }} caractères', maxMessage: 'Le nom ne doit pas faire plus de {{ limit }} caractères')]
+    private ?string $lastName = null;
+
+    #[ORM\Column(length: 255)]
+    #[Groups(['getAllUsers'])]
+    #[Assert\NotBlank(message: "Ce champ est obligatoire")]
+    #[Assert\Length(min: 2, max: 180, minMessage: 'Le prenom doit faire au minimum {{ limit }} caractères', maxMessage: 'Le prenom ne doit pas faire plus de {{ limit }} caractères')]
+    private ?string $firstName = null;
 
     #[ORM\Column]
     private array $roles = [];
@@ -36,23 +44,14 @@ class Clients implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?string $password = null;
 
-    #[ORM\Column(length: 255)]
-    #[Groups(['getClients'])]
-    #[Assert\NotBlank(message: 'Veuillez renseigner le nom de l\'entreprise du client')]
-    #[Assert\Length(min: 2, max: 255, minMessage: 'Ce champ doit au contenir au moins {{ limit }} caractères', maxMessage: 'Ce champ ne peut contenir plus de {{ limit }} caractères')]
-    private ?string $name = null;
-
     #[ORM\Column]
-    #[Groups(['getClients'])]
+    #[Groups(['getAllUsers'])]
     private ?\DateTimeImmutable $createdAt = null;
 
-    #[ORM\OneToMany(mappedBy: 'client', targetEntity: Users::class, orphanRemoval: true)]
-    private Collection $users;
-
-    public function __construct()
-    {
-        $this->users = new ArrayCollection();
-    }
+    #[ORM\ManyToOne(inversedBy: 'users')]
+    #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['getAllUsers'])]
+    private ?Clients $client = null;
 
     public function getId(): ?int
     {
@@ -67,6 +66,30 @@ class Clients implements UserInterface, PasswordAuthenticatedUserInterface
     public function setEmail(string $email): self
     {
         $this->email = $email;
+
+        return $this;
+    }
+
+    public function getLastName(): ?string
+    {
+        return $this->lastName;
+    }
+
+    public function setLastName(string $lastName): self
+    {
+        $this->lastName = $lastName;
+
+        return $this;
+    }
+
+    public function getFirstName(): ?string
+    {
+        return $this->firstName;
+    }
+
+    public function setFirstName(string $firstName): self
+    {
+        $this->firstName = $firstName;
 
         return $this;
     }
@@ -124,18 +147,6 @@ class Clients implements UserInterface, PasswordAuthenticatedUserInterface
         // $this->plainPassword = null;
     }
 
-    public function getName(): ?string
-    {
-        return $this->name;
-    }
-
-    public function setName(string $name): self
-    {
-        $this->name = $name;
-
-        return $this;
-    }
-
     public function getCreatedAt(): ?\DateTimeImmutable
     {
         return $this->createdAt;
@@ -148,32 +159,14 @@ class Clients implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * @return Collection<int, Users>
-     */
-    public function getUsers(): Collection
+    public function getClient(): ?Clients
     {
-        return $this->users;
+        return $this->client;
     }
 
-    public function addUser(Users $user): self
+    public function setClient(?Clients $client): self
     {
-        if (!$this->users->contains($user)) {
-            $this->users->add($user);
-            $user->setClient($this);
-        }
-
-        return $this;
-    }
-
-    public function removeUser(Users $user): self
-    {
-        if ($this->users->removeElement($user)) {
-            // set the owning side to null (unless already changed)
-            if ($user->getClient() === $this) {
-                $user->setClient(null);
-            }
-        }
+        $this->client = $client;
 
         return $this;
     }

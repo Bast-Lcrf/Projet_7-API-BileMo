@@ -5,17 +5,18 @@ namespace App\DataFixtures;
 use Faker\Factory;
 use App\Entity\Clients;
 use App\Entity\Product;
+use App\Entity\Users;
 use Doctrine\Persistence\ObjectManager;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class AppFixtures extends Fixture
 {
-    private $clientsPasswordHasher;
+    private $passwordHasher;
 
-    public function __construct(UserPasswordHasherInterface $clientsPasswordHasher)
+    public function __construct(UserPasswordHasherInterface $passwordHasher)
     {
-        $this->clientsPasswordHasher = $clientsPasswordHasher;
+        $this->passwordHasher = $passwordHasher;
     }
 
     public function load(ObjectManager $manager): void
@@ -23,14 +24,30 @@ class AppFixtures extends Fixture
         $faker = Factory::create();
 
         // Fixtures liées au clients
+        $listClients = [];
         for ($i = 0; $i  < 5; $i++) { 
             $clients = new Clients();
             $clients->setEmail($faker->email());
             $clients->setRoles(['ROLE_CLIENT']);
-            $clients->setPassword($this->clientsPasswordHasher->hashPassword($clients, "password"));
+            $clients->setPassword($this->passwordHasher->hashPassword($clients, "password"));
             $clients->setName($faker->name());
             $clients->setCreatedAt(new \DateTimeImmutable('Europe/Paris'));
             $manager->persist($clients);
+            // On sauvegarde le client créer dans un tableau
+            $listClients[] = $clients;
+        }
+
+        // Fixtures liées au users
+        for ($i = 0; $i < 20; $i++) { 
+            $user = new Users();
+            $user->setEmail($faker->email());
+            $user->setLastName($faker->lastname());
+            $user->setFirstName($faker->firstname());
+            $user->setRoles(['ROLE_USER']);
+            $user->setPassword($this->passwordHasher->hashPassword($user, 'password'));
+            $user->setCreatedAt(new \DateTimeImmutable('Europe/Paris'));
+            $user->setClient($listClients[array_rand($listClients)]);
+            $manager->persist($user);
         }
 
         // Fixtures liées au produits

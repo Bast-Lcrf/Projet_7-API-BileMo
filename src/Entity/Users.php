@@ -106,6 +106,16 @@ class Users implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
+     * Méthode getUsername qui permet de retouner le champ qui est utilisé pour l'authentification
+     *
+     * @return string
+     */
+    public function getUsername(): string
+    {
+        return $this->getUserIdentifier();
+    }
+
+    /**
      * @see UserInterface
      */
     public function getRoles(): array

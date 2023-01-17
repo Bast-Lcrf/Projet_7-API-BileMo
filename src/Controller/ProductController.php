@@ -31,6 +31,7 @@ class ProductController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/api/products', name: 'product', methods: ['GET'])] 
+    #[IsGranted('ROLE_CLIENT', message: 'Vous n\'avez pas les droits suffisants pour voir la liste des produits')]
     public function getAllProducts(
         Request $request,
         ProductRepository $productRepository,
@@ -44,7 +45,7 @@ class ProductController extends AbstractController
         $idCache = "getAllProduct-" . $page . "-" . $limit;
 
         $jsonProductList = $cache->get($idCache, function (ItemInterface $item) use ($productRepository, $page, $limit, $serializer) {
-            echo ("L\'ÉLÉMENT N\'EST PAS ENCORE EN CACHE ! \n");
+            echo ("LES ÉLÉMENTS NE SONT PAS ENCORE EN CACHE ! \n");
             $context = SerializationContext::create()->setGroups('getProducts');
             $item->tag("productCache");
             $productList = $productRepository->findAllPaginated($page, $limit);
@@ -62,6 +63,7 @@ class ProductController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/api/products/{id}', name: 'detailProduct', methods: ['GET'])]
+    #[IsGranted('ROLE_CLIENT', message: 'Vous n\'avez pas les droits suffisants pour voir le détail du produit')]
     public function getDetailProduct(Product $product, SerializerInterface $serializer): JsonResponse
     {
         $context = SerializationContext::create()->setGroups('getProducts');

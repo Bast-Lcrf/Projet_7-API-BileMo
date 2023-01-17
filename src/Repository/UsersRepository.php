@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\Clients;
 use App\Entity\Users;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -57,7 +58,7 @@ class UsersRepository extends ServiceEntityRepository implements PasswordUpgrade
     }
 
     /**
-     * Méthode pour paginer les resultats de des utilisateurs
+     * Méthode pour paginer les resultats des utilisateurs
      *
      * @param  int $page
      * @param  int $limit
@@ -66,6 +67,25 @@ class UsersRepository extends ServiceEntityRepository implements PasswordUpgrade
     public function findAllPaginated(int $page, int $limit)
     {
         $qb = $this->createQueryBuilder('b')
+            ->setFirstResult(($page - 1) * $limit)
+            ->setMaxResults($limit);
+
+            return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * Méthode pour paginer les resultats des utilisateurs liés à un client
+     *
+     * @param  int $page
+     * @param  int $limit
+     * @param Clients $client
+     * @return void
+     */
+    public function findAllPaginatedwithClient(int $page, int $limit, Clients $client)
+    {
+        $qb = $this->createQueryBuilder('u')
+            ->andWhere('u.client = :val')
+            ->setParameter('val', $client)
             ->setFirstResult(($page - 1) * $limit)
             ->setMaxResults($limit);
 

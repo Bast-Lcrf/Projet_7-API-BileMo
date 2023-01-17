@@ -4,7 +4,6 @@ namespace App\Controller;
 
 use App\Entity\Clients;
 use App\Repository\ClientsRepository;
-use DateTimeImmutable;
 use JMS\Serializer\SerializerInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use JMS\Serializer\SerializationContext;
@@ -52,6 +51,7 @@ class ClientsController extends AbstractController
             echo("L\'ÉLÉMENT N\'NEST PAS ENCORE EN CACHE ! \n");
             $context = SerializationContext::create()->setGroups('getClients');
             $item->tag("clientsCache");
+            $item->expiresAfter(60);
             $clientsList = $clientsRepository->findAllPaginated($page, $limit);
             return $serializer->serialize($clientsList, 'json', $context);
         });

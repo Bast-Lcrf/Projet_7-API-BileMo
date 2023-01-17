@@ -35,6 +35,7 @@ class ClientsController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/api/clients', name: 'clients', methods: ['GET'])] 
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour voir la liste des clients de BileMo')]
     public function getAllClients(
         Request $request,
         ClientsRepository $clientsRepository,
@@ -66,7 +67,8 @@ class ClientsController extends AbstractController
      * 
      * @return JsonResponse
      */
-    #[Route('/api/clients/{id}', name: 'detailClient', methods: ['GET'])]  
+    #[Route('/api/clients/{id}', name: 'detailClient', methods: ['GET'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour voir le détail d\'un client de BileMo')]
     public function getDetailClient(Clients $clients, SerializerInterface $serializer): JsonResponse
     {
         $context = SerializationContext::create()->setGroups('getClients');

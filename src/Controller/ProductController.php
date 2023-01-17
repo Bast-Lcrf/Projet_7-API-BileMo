@@ -48,6 +48,7 @@ class ProductController extends AbstractController
             echo ("LES ÉLÉMENTS NE SONT PAS ENCORE EN CACHE ! \n");
             $context = SerializationContext::create()->setGroups('getProducts');
             $item->tag("productCache");
+            $item->expiresAfter(60);
             $productList = $productRepository->findAllPaginated($page, $limit);
             return $serializer->serialize($productList, 'json', $context);
         });

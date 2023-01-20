@@ -218,4 +218,58 @@ class UsersController extends AbstractController
             return new JsonResponse("Erreur 401, Vous n'êtes pas autorisé à supprimer les données d'un autre client", Response::HTTP_UNAUTHORIZED);
         }
     }
+   
+    /**
+     * Cette méthode permet à un client de mettre à jour les informations de ses utilisateurs, 1 à la fois,
+     * sinon une erreur 401 lui est retourné.
+     * Connexion via JWT token du client
+     * 
+     * @param Request $request
+     * @param SerializerInterface $serializer
+     * @param Users $users
+     * @param EntityManagerInterface $em
+     * @param ValidatorInterface $validator
+     * @param TagAwareCacheInterface $cache
+     *
+     * @return JsonResponse
+     */
+    #[Route('/api/users/{id}', name: 'updateUser', methods: ['PUT'])]
+    #[IsGranted('ROLE_CLIENT', message: 'Vous n\'avez pas les droits suffisants pour mettre à jour un utilisateur')] 
+    public function updateUser(
+        Request $request,
+        SerializerInterface $serializer,
+        Users $users,
+        EntityManagerInterface $em,
+        ValidatorInterface $validator,
+        TagAwareCacheInterface $cache
+    ): JsonResponse
+    {
+        // On récupère le client connecté
+        $client = $this->getUser();
+
+        if($client == $users->getClient()) {
+            $updateUser = $serializer->deserialize($request->getContent(), Users::class, 'json');
+
+            // On vérifie les erreurs
+            $error = $validator->validate($updateUser);
+            if($error->count() > 0) {
+                return new JsonResponse($serializer->serialize($error, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
+            }
+
+            // On update les informations
+            $users->setEmail($updateUser->getEmail());
+            $users->setLastName($updateUser->getLastname());
+            $users->setFirstName($updateUser->getFirstName());
+
+            $em->persist($users);
+            $em->flush();
+
+            // On vide le cache
+            $cache->invalidateTags(['usersCache']);
+
+            return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
+        } else {
+            return new JsonResponse("Erreur 401, Vous n'êtes pas autorisé à modifier les données d'un autre client", Response::HTTP_UNAUTHORIZED);
+        }
+    }
 }

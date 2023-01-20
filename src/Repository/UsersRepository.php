@@ -62,6 +62,7 @@ class UsersRepository extends ServiceEntityRepository implements PasswordUpgrade
      *
      * @param  int $page
      * @param  int $limit
+     * 
      * @return void
      */
     public function findAllPaginated(int $page, int $limit)
@@ -79,6 +80,7 @@ class UsersRepository extends ServiceEntityRepository implements PasswordUpgrade
      * @param  int $page
      * @param  int $limit
      * @param Clients $client
+     * 
      * @return void
      */
     public function findAllPaginatedwithClient(int $page, int $limit, Clients $client)
@@ -88,6 +90,25 @@ class UsersRepository extends ServiceEntityRepository implements PasswordUpgrade
             ->setParameter('val', $client)
             ->setFirstResult(($page - 1) * $limit)
             ->setMaxResults($limit);
+
+            return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * Méthode pour récupérer les informations d'un utilisateurs d'un client
+     *
+     * @param Users $user
+     * @param Clients $client
+     * 
+     * @return null|Users
+     */
+    public function findUserWithClient(Users $user, Clients $client)
+    {
+        $qb = $this->createQueryBuilder('u')
+            ->andWhere('u.id = :value')
+            ->andWhere('u.client = :val')
+            ->setParameter('value', $user)
+            ->setParameter('val', $client);
 
             return $qb->getQuery()->getResult();
     }

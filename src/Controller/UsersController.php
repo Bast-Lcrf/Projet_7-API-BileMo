@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use App\Entity\Clients;
+use App\Entity\Users;
 use App\Repository\UsersRepository;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
@@ -89,5 +91,40 @@ class UsersController extends AbstractController
         });
 
         return new JsonResponse($jsonUsersList, Response::HTTP_OK, [], true);
+    }
+
+    /**
+     * Cette méthode nous permet de récupérer les informations d'un utilisateur relié au client,
+     * via la connection JWT du client
+     * 
+     * @param Users $users
+     * @param SerializerInterface $serializer
+     * @param UsersRepository $usersRepository
+     *
+     * @return JsonResponse
+     */
+    #[Route('/api/users/{id}', name: 'detailUser', methods: ['GET'])]
+    #[IsGranted('ROLE_CLIENT', message: "Vous n'avez pas les droits suffisant pour lire les données de l'utilisateur")]  
+    public function getDetailUser(
+        Users $users,
+        SerializerInterface $serializer,
+        UsersRepository $usersRepository
+    ): JsonResponse
+    {
+        // On récupère le client connecté
+        $client = $this->getUser();
+
+        // On va chercher les informations de l'utilisateur relié au client
+        $user = $usersRepository->findUserWithClient($users ,$client);
+
+        // On vérifie les erreurs
+        if($user == null) {
+            return new JsonResponse("Erreur 401, Vous n'êtes pas authorisé a récupérer ces informations", Response::HTTP_UNAUTHORIZED);
+        }
+        
+        $context = SerializationContext::create()->setGroups('getAllUsers');
+        $jsonUsers = $serializer->serialize($user, 'json', $context);
+        
+        return new JsonResponse($jsonUsers, Response::HTTP_OK, [], true);
     }
 }

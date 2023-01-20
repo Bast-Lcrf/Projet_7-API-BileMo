@@ -149,7 +149,7 @@ class ClientsController extends AbstractController
  
     /**
      * Cette méthode nous permet de mettre à jour l'email et le nom du client 
-     * (son role, son mdp et la date de création reste inchangé)
+     * (son role, son mdp et la date de création du commpte reste inchangé)
      * 
      * @param Request $request
      * @param SerializerInterface $serializer
@@ -173,15 +173,15 @@ class ClientsController extends AbstractController
     {
         $updateClient = $serializer->deserialize($request->getContent(), Clients::class, 'json');
 
-        // On update les informations
-        $currentClient->setEmail($updateClient->getEmail());
-        $currentClient->setName($updateClient->getName());
-
         // On vérifie les erreurs
-        $error = $validator->validate($currentClient);
+        $error = $validator->validate($updateClient);
         if($error->count() > 0) {
             return new JsonResponse($serializer->serialize($error, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
         }
+
+        // On update les informations
+        $currentClient->setEmail($updateClient->getEmail());
+        $currentClient->setName($updateClient->getName());
 
         $em->persist($currentClient);
         $em->flush();

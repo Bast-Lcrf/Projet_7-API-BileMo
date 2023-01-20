@@ -10,18 +10,45 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use JMS\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
+use Hateoas\Configuration\Annotation as Hateoas;
 
+/**
+ * @Hateoas\Relation(
+ *      "self",
+ *      href = @Hateoas\Route(
+ *          "detailClient",
+ *          parameters = { "id" = "expr(object.getId())" }
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(groups="getClients")
+ * )
+ * @Hateoas\Relation(
+ *      "delete",
+ *      href = @Hateoas\Route(
+ *          "deleteClient",
+ *          parameters = { "id" = "expr(object.getId())" },
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(groups="getClients", excludeIf = "expr(not is_granted('ROLE_ADMIN'))"),
+ * )
+ * @Hateoas\Relation(
+ *      "update",
+ *      href = @Hateoas\Route(
+ *          "updateClient",
+ *          parameters = { "id" = "expr(object.getId())" },
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(groups="getClients", excludeIf = "expr(not is_granted('ROLE_ADMIN'))"),
+ * )
+ */
 #[ORM\Entity(repositoryClass: ClientsRepository::class)]
 class Clients implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['getClients'])]
+    #[Groups(['getClients', 'getAllUsers'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
-    #[Groups(['getClients'])]
+    #[Groups(['getClients', 'getAllUsers'])]
     #[Assert\NotBlank(message:'Veuillez renseigner l\'email du client')]
     #[Assert\Email()]
     #[Assert\Length(min: 2, max: 180, minMessage: 'Ce champ doit au contenir au moins {{ limit }} caractères', maxMessage: 'Ce champ ne peut contenir plus de {{ limit }} caractères')]
@@ -37,13 +64,13 @@ class Clients implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['getClients'])]
+    #[Groups(['getClients', 'getAllUsers'])]
     #[Assert\NotBlank(message: 'Veuillez renseigner le nom de l\'entreprise du client')]
     #[Assert\Length(min: 2, max: 255, minMessage: 'Ce champ doit au contenir au moins {{ limit }} caractères', maxMessage: 'Ce champ ne peut contenir plus de {{ limit }} caractères')]
     private ?string $name = null;
 
     #[ORM\Column]
-    #[Groups(['getClients'])]
+    #[Groups(['getClients', 'getAllUsers'])]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\OneToMany(mappedBy: 'client', targetEntity: Users::class, orphanRemoval: true)]

@@ -8,30 +8,57 @@ use JMS\Serializer\Annotation\Groups;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
+use Hateoas\Configuration\Annotation as Hateoas;
 
+/**
+ * @Hateoas\Relation(
+ *      "self",
+ *      href = @Hateoas\Route(
+ *          "detailUser",
+ *          parameters = { "id" = "expr(object.getId())" }
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(groups="getUsers")
+ * )
+ * @Hateoas\Relation(
+ *      "delete",
+ *      href = @Hateoas\Route(
+ *          "deleteUser",
+ *          parameters = { "id" = "expr(object.getId())" },
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(groups="getUsers", excludeIf = "expr(not is_granted('ROLE_CLIENT'))"),
+ * )
+ * @Hateoas\Relation(
+ *      "update",
+ *      href = @Hateoas\Route(
+ *          "updateUser",
+ *          parameters = { "id" = "expr(object.getId())" },
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(groups="getUsers", excludeIf = "expr(not is_granted('ROLE_CLIENT'))"),
+ * )
+ */
 #[ORM\Entity(repositoryClass: UsersRepository::class)]
 class Users implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['getAllUsers'])]
+    #[Groups(['getAllUsers', 'getUsers'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
-    #[Groups(['getAllUsers'])]
+    #[Groups(['getAllUsers', 'getUsers'])]
     #[Assert\NotBlank(message: "L\'adresse Email est obligatoire")]
     #[Assert\Length(min: 2, max: 180, minMessage: 'L\'adresse email doit faire au minimum {{ limit }} caractères', maxMessage: 'L\'adresse email ne doit pas faire plus de {{ limit }} caractères')]
     private ?string $email = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['getAllUsers'])]
+    #[Groups(['getAllUsers', 'getUsers'])]
     #[Assert\NotBlank(message: "Ce champ est obligatoire")]
     #[Assert\Length(min: 2, max: 180, minMessage: 'Le nom doit faire au minimum {{ limit }} caractères', maxMessage: 'Le nom ne doit pas faire plus de {{ limit }} caractères')]
     private ?string $lastName = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['getAllUsers'])]
+    #[Groups(['getAllUsers', 'getUsers'])]
     #[Assert\NotBlank(message: "Ce champ est obligatoire")]
     #[Assert\Length(min: 2, max: 180, minMessage: 'Le prenom doit faire au minimum {{ limit }} caractères', maxMessage: 'Le prenom ne doit pas faire plus de {{ limit }} caractères')]
     private ?string $firstName = null;
@@ -46,7 +73,7 @@ class Users implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column]
-    #[Groups(['getAllUsers'])]
+    #[Groups(['getAllUsers', 'getUsers'])]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\ManyToOne(inversedBy: 'users')]

@@ -2,7 +2,6 @@
 
 namespace App\Controller;
 
-use App\Entity\Clients;
 use App\Entity\Users;
 use App\Repository\UsersRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -83,11 +82,11 @@ class UsersController extends AbstractController
         $page = $request->get('page', 1);
         $limit = $request->get('limit', 5);
 
-        $idCache = "getAllUsers-" . $page . "-" . $limit;
+        $idCache = "getUsers-" . $page . "-" . $limit;
 
         $jsonUsersList = $cache->get($idCache, function (ItemInterface $item) use ($usersRepository, $page, $limit, $serializer, $clients) {
             echo("LES ÉLÉMENTS NE SONT PAS ENCORE EN CACHE ! \n");
-            $context = SerializationContext::create()->setGroups('getAllUsers');
+            $context = SerializationContext::create()->setGroups('getUsers');
             $item->tag("usersCache");
             $item->expiresAfter(5);
             $usersList = $usersRepository->findAllPaginatedwithClient($page, $limit, $clients);
@@ -126,7 +125,7 @@ class UsersController extends AbstractController
             return new JsonResponse("Erreur 401, Vous n'êtes pas autorisé à récupérer ces informations", Response::HTTP_UNAUTHORIZED);
         }
         
-        $context = SerializationContext::create()->setGroups('getAllUsers');
+        $context = SerializationContext::create()->setGroups('getUsers');
         $jsonUsers = $serializer->serialize($user, 'json', $context);
         
         return new JsonResponse($jsonUsers, Response::HTTP_OK, [], true);

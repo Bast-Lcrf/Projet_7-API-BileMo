@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Clients;
 use App\Entity\Users;
 use App\Repository\UsersRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
@@ -12,7 +13,10 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
@@ -126,5 +130,63 @@ class UsersController extends AbstractController
         $jsonUsers = $serializer->serialize($user, 'json', $context);
         
         return new JsonResponse($jsonUsers, Response::HTTP_OK, [], true);
+    }
+
+    
+    /**
+     * Cette méthode permet à un client de créer un nouvel utilisateur qui lui sera lié,
+     * via la connexion JWT du client
+     * 
+     * @param Request $request
+     * @param SerializerInterface $serializer
+     * @param EntityManagerInterface $em
+     * @param UrlGeneratorInterface $urlGenerator
+     * @param ValidatorInterface $validator
+     * @param UserPasswordHasherInterface $userHash
+     *
+     * @return JsonResponse
+     */
+    #[Route('api/users', name: 'createUser', methods: ['POST'])]
+    #[IsGranted('ROLE_CLIENT', message: 'Vous n\'avez pas les droits suffisants pour ajouter un nouvel utilisateur')] 
+    public function createUser(
+        Request $request,
+        SerializerInterface $serializer,
+        EntityManagerInterface $em,
+        UrlGeneratorInterface $urlGenerator,
+        ValidatorInterface $validator,
+        UserPasswordHasherInterface $userHash
+    ): JsonResponse
+    {
+        $user = $serializer->deserialize($request->getContent(), Users::class, 'json');
+
+        // On vérifie les erreurs
+        $error = $validator->validate($user);
+        if($error->count() > 0) {
+            return new JsonResponse($serializer->serialize($error, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
+        }
+
+        // On hash le mot de passe renseigné
+        $pass = $userHash->hashPassword($user, $user->getPassword());
+        $user->setPassword($pass);
+
+        // On ajoute le rôle
+        $user->setRoles(['ROLE_USER']);
+
+        // On ajoute la date de création du compte
+        $user->setCreatedAt(new \DateTimeImmutable('Europe/Paris'));
+
+        // On relie l'utilisateur à son client
+        $client = $this->getUser();
+        $user->setClient($client);
+
+        $em->persist($user);
+        $em->flush();
+
+        $context = SerializationContext::create()->setGroups('getAllUsers');
+        $jsonUser = $serializer->serialize($user, 'json', $context);
+
+        $location = $urlGenerator->generate('detailUser', ['id' => $user->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
+
+        return new JsonResponse($jsonUser, Response::HTTP_CREATED, ["location" => $location], true);
     }
 }

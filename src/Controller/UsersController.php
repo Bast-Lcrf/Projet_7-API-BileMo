@@ -98,8 +98,8 @@ class UsersController extends AbstractController
     }
 
     /**
-     * Cette méthode nous permet de récupérer les informations d'un utilisateur relié au client,
-     * via la connection JWT du client
+     * Cette méthode nous permet de récupérer les informations d'un utilisateur relié au client, sinon une erreur 401 lui est retourné
+     * Via la connexion JWT du client
      * 
      * @param Users $users
      * @param SerializerInterface $serializer
@@ -123,7 +123,7 @@ class UsersController extends AbstractController
 
         // On vérifie les erreurs
         if($user == null) {
-            return new JsonResponse("Erreur 401, Vous n'êtes pas authorisé a récupérer ces informations", Response::HTTP_UNAUTHORIZED);
+            return new JsonResponse("Erreur 401, Vous n'êtes pas autorisé à récupérer ces informations", Response::HTTP_UNAUTHORIZED);
         }
         
         $context = SerializationContext::create()->setGroups('getAllUsers');
@@ -135,7 +135,7 @@ class UsersController extends AbstractController
     
     /**
      * Cette méthode permet à un client de créer un nouvel utilisateur qui lui sera lié,
-     * via la connexion JWT du client
+     * Via la connexion JWT du client
      * 
      * @param Request $request
      * @param SerializerInterface $serializer
@@ -188,5 +188,34 @@ class UsersController extends AbstractController
         $location = $urlGenerator->generate('detailUser', ['id' => $user->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
 
         return new JsonResponse($jsonUser, Response::HTTP_CREATED, ["location" => $location], true);
+    }
+
+    /**
+     * Cette méthode permet à un client de supprimer l'un de ses utilisateurs, sinon une erreur 401 lui est retourné
+     * Via la connexion JWT du client
+     *
+     * @param  Users $users
+     * @param  EntityManagerInterface $em
+     * @param  TagAwareCacheInterface $cache
+     * 
+     * @return JsonResponse
+     */
+    #[Route('/api/users/{id}', name: 'deleteUser', methods: ['DELETE'])]
+    #[IsGranted('ROLE_CLIENT', message: 'Vous n\'avez pas les droits suffisants pour supprimer un utilisateur')] 
+    public function deleteUser(Users $users, EntityManagerInterface $em, TagAwareCacheInterface $cache): JsonResponse
+    {
+        // On récupère le client connecté
+        $client = $this->getUser();
+
+        // On vérifie si l'utilisateur supprimer correspond à son client
+        if($client == $users->getClient()) {
+            $cache->invalidateTags(['usersCache']);
+            $em->remove($users);
+            $em->flush();
+
+            return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+        } else {
+            return new JsonResponse("Erreur 401, Vous n'êtes pas autorisé à supprimer les données d'un autre client", Response::HTTP_UNAUTHORIZED);
+        }
     }
 }

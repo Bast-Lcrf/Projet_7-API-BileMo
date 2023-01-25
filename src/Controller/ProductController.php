@@ -17,17 +17,47 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
+use Nelmio\ApiDocBundle\Annotation\Model;
+use OpenApi\Annotations as OA;
 
+/**
+ * * @OA\Tag(name="Products")
+ */
 class ProductController extends AbstractController
 {
     /**
      * Cette méthode nous permet de récupérer la liste de tous les produits,
-     * Pagination 5 produits par pages, et mise en cache des éléments
+     * Pagination 5 produits par pages (par défaut), et mise en cache des éléments (Clients et admin uniquement)
+     * 
+     * @OA\Get(
+     *      description="This method allow us to get the list of BileMo's products (Only for Clients and Admin)"
+     * )
+     * @OA\Response(
+     *      response=200,
+     *      description="Return the list of products",
+     *      @OA\JsonContent(
+     *          type="array",
+     *          @OA\Items(ref=@Model(type=product::class, groups={"getProducts"}))
+     *      )
+     * )
+     * @OA\Parameter(
+     *      name="page",
+     *      in="query",
+     *      description="La page que l'on veut récupérer",
+     *      @OA\Schema(type="in")
+     * )
+     * @OA\Parameter(
+     *      name="limit",
+     *      in="query",
+     *      description="Le nombre d'éléments que l'on veut récupérer",
+     *      @OA\Schema(type="in")
+     * )
      *
      * @param Request $request
      * @param ProductRepository $productRepository
      * @param SerializerInterface $serializer
      * @param TagAwareCacheInterface $cache
+     * 
      * @return JsonResponse
      */
     #[Route('/api/products', name: 'product', methods: ['GET'])] 
@@ -57,8 +87,20 @@ class ProductController extends AbstractController
     }
    
     /**
-     * Cette méthode nous permet de récupérer le detail d'un produit via son id
+     * Cette méthode nous permet de récupérer le detail d'un produit via son id (Clients et admin uniquement)
      *
+     * @OA\Get(
+     *      description="This method allow us to view a product's detail by its id (Only for clients and Admin)"
+     * )
+     * @OA\Response(
+     *      response=200,
+     *      description="Detail of BileMo's product",
+     *      @OA\JsonContent(
+     *          type="array",
+     *          @OA\Items(ref=@Model(type=Product::class, groups={"getProducts"}))
+     *      )
+     * )
+     * 
      * @param  Product $product
      * @param  SerializerInterface $serializer
      * @return JsonResponse
@@ -74,8 +116,29 @@ class ProductController extends AbstractController
 
     
     /**
-     * Cette méthode nous permet de supprimer un produit par rapport à son id
+     * Cette méthode nous permet de supprimer un produit par rapport à son id (Admin uniquement)
      *
+     * @OA\Delete(
+     *      description="This method allow us to delete a product by its id (Only for Admin)"
+     * )
+     * @OA\Response(
+     *      response="204",
+     *      description="Product deleted",
+     *      content={
+     *          @OA\MediaType(
+     *              mediaType="application/json",
+     *              @OA\Schema(
+     *                  @OA\Property(
+     *                      property="status",
+     *                      type="boolean",
+     *                      description="DELETE API Response"
+     *                  )
+     *              )
+     *          )
+     *      }
+     * )
+     * 
+     * 
      * @param  mixed $product
      * @param  mixed $em
      * @param  mixed $cache
@@ -92,7 +155,55 @@ class ProductController extends AbstractController
     }
     
     /**
-     * Cette méthode nous permet de créer un nouveau produit
+     * Cette méthode nous permet de créer un nouveau produit (Admin uniquement)
+     * 
+     * @OA\Post(
+     *      description="This method allow us to create a new product (Only for Admin)"
+     * )
+     * @OA\Response(
+     *      response=201,
+     *      description="New product created",
+     *      @OA\JsonContent(
+     *          type="array",
+     *          @OA\Items(ref=@Model(type=product::class, groups={"getProducts"}))
+     *      )
+     * )
+     * @OA\RequestBody(
+     *      description="Json Payload",
+     *      @OA\MediaType(
+     *          mediaType="application/json",
+     *          @OA\Schema(
+     *              type="object",
+     *              @OA\Property(
+     *                  property="name",
+     *                  description="Nom du nouveau produit",
+     *                  type="string"
+     *              ),
+     *              @OA\Property(
+     *                  property="brand",
+     *                  description="Marque du nouveau produit",
+     *                  type="string"
+     *              ),
+     *              @OA\Property(
+     *                  property="releaseDate",
+     *                  description="Date de sortie du produit",
+     *                  type="date",
+     *                  example="2023-01-01T00:00:00+01:00"
+     *              ),
+     *              @OA\Property(
+     *                  property="operatingSystem",
+     *                  description="OS du produit",
+     *                  type="string"
+     *              ),
+     *              @OA\Property(
+     *                  property="Price",
+     *                  description="Prix du produit",
+     *                  type="int"
+     *              )
+     *          )
+     *      )
+     * )
+     * 
      *
      * @param Request $request
      * @param SerializerInterface $serializer
@@ -131,7 +242,62 @@ class ProductController extends AbstractController
     }
     
     /**
-     * Cette méthode nous permet de modifier un produit via son id
+     * Cette méthode nous permet de modifier un produit via son id (Admin uniquement)
+     * 
+     * @OA\Put(
+     *      description="This method allow us to update a product by its id (Only for Admin)"
+     * ),
+     * @OA\RequestBody(
+     *      description="Json Payload",
+     *      @OA\MediaType(
+     *          mediaType="application/json",
+     *          @OA\Schema(
+     *              type="object",
+     *              @OA\Property(
+     *                  property="name",
+     *                  description="Nom du produit",
+     *                  type="string"
+     *              ),
+     *              @OA\Property(
+     *                  property="brand",
+     *                  description="Marque du produit",
+     *                  type="string"
+     *              ),
+     *              @OA\Property(
+     *                  property="releaseDate",
+     *                  description="Date de sortie du produit",
+     *                  type="date",
+     *                  example="2023-01-01T00:00:00+01:00"
+     *              ),
+     *              @OA\Property(
+     *                  property="operatingSystem",
+     *                  description="OS du produit",
+     *                  type="string"
+     *              ),
+     *              @OA\Property(
+     *                  property="Price",
+     *                  description="Prix du produit",
+     *                  type="integer"
+     *              )
+     *          )
+     *      )
+     * )
+     * @OA\Response(
+     *      response="204",
+     *      description="Product updated",
+     *      content={
+     *          @OA\MediaType(
+     *              mediaType="application/json",
+     *              @OA\Schema(
+     *                  @OA\Property(
+     *                      property="status",
+     *                      type="boolean",
+     *                      description="PUT API Response"
+     *                  )
+     *              )
+     *          )
+     *      }
+     * )
      *
      * @param Request $request
      * @param SerializerInterface $serializer

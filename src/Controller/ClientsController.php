@@ -18,13 +18,42 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Nelmio\ApiDocBundle\Annotation\Model;
+use OpenApi\Annotations as OA;
 
+/**
+ * @OA\Tag(name="Clients")
+ */
 class ClientsController extends AbstractController
-{
-       
+{     
     /**
-     * Cette méthode nous permet de récupérer la liste des clients de BileMo
-     * Pagination 5 par pages, et mise en cache des éléments
+     * Cette méthode nous permet de récupérer la liste des clients de BileMo. (Admin uniquement)
+     * Pagination par défaut: 5 par pages, et mise en cache des éléments.
+     * 
+     * @OA\Get(
+     *      description="This method allow us to get the list of BileMo's clients (Only for Admin)"
+     * )
+     * @OA\Response(
+     *      response=200,
+     *      description="Return the list of BileMo's clients",
+     *      @OA\JsonContent(
+     *          type="array",
+     *          @OA\Items(ref=@Model(type=Clients::class, groups={"getClients"}))
+     *      )
+     * )
+     * @OA\Parameter(
+     *      name="page",
+     *      in="query",
+     *      description="La page que l'on veut récupérer",
+     *      @OA\Schema(type="in")
+     * )
+     * @OA\Parameter(
+     *      name="limit",
+     *      in="query",
+     *      description="Le nombre d'éléments que l'on veut récupérer",
+     *      @OA\Schema(type="in")
+     * )
+     * 
      *
      * @param Request $request
      * @param ClientsRepository $clientsRepository
@@ -60,7 +89,19 @@ class ClientsController extends AbstractController
     }
 
     /**
-     * Cette méthode nous permet de récupérer le detail d'un client via son id
+     * Cette méthode nous permet de récupérer le detail d'un client via son id (Admin uniquement)
+     *
+     *  @OA\Get(
+     *      description="This method allow us to view a client's detail (Only for Admin)"
+     * )
+     * @OA\Response(
+     *      response=200,
+     *      description="Detail of BileMo's client",
+     *      @OA\JsonContent(
+     *          type="array",
+     *          @OA\Items(ref=@Model(type=Clients::class, groups={"getClients"}))
+     *      )
+     * )
      *
      * @param  Clients $clients
      * @param  SerializerInterface $serializer
@@ -77,7 +118,27 @@ class ClientsController extends AbstractController
     }
 
     /**
-     * Cette méthode nous permet de supprimer un client via son id
+     * Cette méthode nous permet de supprimer un client via son id (Admin uniquement)
+     * 
+     * @OA\Delete(
+     *      description="This method allow us to delete a client (Only for Admin)"
+     * )
+     * @OA\Response(
+     *      response="204",
+     *      description="Client deleted",
+     *      content={
+     *          @OA\MediaType(
+     *              mediaType="application/json",
+     *              @OA\Schema(
+     *                  @OA\Property(
+     *                      property="status",
+     *                      type="boolean",
+     *                      description="DELETE API Response"
+     *                  )
+     *              )
+     *          )
+     *      }
+     * )
      * 
      * @param  Clients $clients
      * @param  EntityManagerInterface $em
@@ -96,7 +157,53 @@ class ClientsController extends AbstractController
     }
 
     /**
-     * Cette méthode nous permet de créer un nouveau client
+     * Cette méthode nous permet de créer un nouveau client (Admin uniquement)
+     * 
+     * @OA\Post(
+     *      description="This method allow us to create a new client (Only for Admin)"
+     * ),
+     * @OA\RequestBody(
+     *      description="Json Payload",
+     *      @OA\MediaType(
+     *          mediaType="application/json",
+     *          @OA\Schema(
+     *              type="object",
+     *              @OA\Property(
+     *                  property="email",
+     *                  description="Email de l'entreprise cliente de BileMo (unique)",
+     *                  type="string",
+     *                  format="email"
+     *              ),
+     *              @OA\Property(
+     *                  property="password",
+     *                  description="Mot de passe de l'entreprise cliente de BileMo",
+     *                  type="string",
+     *                  format="password"
+     *              ),
+     *              @OA\Property(
+     *                  property="name",
+     *                  description="Nom de l'entreprise cliente de BileMo",
+     *                  type="string"
+     *              )
+     *          )
+     *      )
+     * )
+     * @OA\Response(
+     *      response="201",
+     *      description="New client created",
+     *      content={
+     *          @OA\MediaType(
+     *              mediaType="application/json",
+     *              @OA\Schema(
+     *                  @OA\Property(
+     *                      property="status",
+     *                      type="boolean",
+     *                      description="POST API Response"
+     *                  )
+     *              )
+     *          )
+     *      }
+     * )
      *
      * @param Request $request
      * @param SerializerInterface $serializer
@@ -148,8 +255,48 @@ class ClientsController extends AbstractController
     }
  
     /**
-     * Cette méthode nous permet de mettre à jour l'email et le nom du client 
-     * (son role, son mdp et la date de création du commpte reste inchangé)
+     * Cette méthode nous permet de mettre à jour l'email et le nom du client (Admin uniquement)
+     * (son role, son mdp et la date de création du compte reste inchangé)
+     * 
+     * @OA\Put(
+     *      description="This method allow us to update a client's name and email (Only for Admin)"
+     * ),
+     * @OA\RequestBody(
+     *      description="Json Payload",
+     *      @OA\MediaType(
+     *          mediaType="application/json",
+     *          @OA\Schema(
+     *              type="object",
+     *              @OA\Property(
+     *                  property="email",
+     *                  description="Email de l'entreprise cliente de BileMo (unique)",
+     *                  type="string",
+     *                  format="email"
+     *              ),
+     *              @OA\Property(
+     *                  property="name",
+     *                  description="Nom de l'entreprise cliente de BileMo",
+     *                  type="string"
+     *              )
+     *          )
+     *      )
+     * ),
+     * @OA\Response(
+     *      response="204",
+     *      description="Client updated",
+     *      content={
+     *          @OA\MediaType(
+     *              mediaType="application/json",
+     *              @OA\Schema(
+     *                  @OA\Property(
+     *                      property="status",
+     *                      type="boolean",
+     *                      description="PUT API Response"
+     *                  )
+     *              )
+     *          )
+     *      }
+     * )
      * 
      * @param Request $request
      * @param SerializerInterface $serializer

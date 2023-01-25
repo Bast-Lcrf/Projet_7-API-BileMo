@@ -18,11 +18,41 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
+use Nelmio\ApiDocBundle\Annotation\Model;
+use OpenApi\Annotations as OA;
 
+/**
+ * * @OA\Tag(name="Users")
+ */
 class UsersController extends AbstractController
 {    
     /**
-     * Cette méthode nous permet de récupérer la liste de tous les utilisateurs
+     * Cette méthode nous permet de récupérer la liste de tous les utilisateurs,
+     * Pagination 5 par pages (par defaut) et mise en cache des éléments (Admin uniquement)
+     * 
+     * @OA\Get(
+     *      description="This method allow us to get the list of BileMo's client's users (Only for Admin)"
+     * )
+     * @OA\Response(
+     *      response=200,
+     *      description="List of BileMo's client's users",
+     *      @OA\JsonContent(
+     *          type="array",
+     *          @OA\Items(ref=@Model(type=Users::class, groups={"getUsers"}))
+     *      )
+     * )
+     * @OA\Parameter(
+     *      name="page",
+     *      in="query",
+     *      description="La page que l'on veut récupérer",
+     *      @OA\Schema(type="in")
+     * )
+     * @OA\Parameter(
+     *      name="limit",
+     *      in="query",
+     *      description="Le nombre d'éléments que l'on veut récupérer",
+     *      @OA\Schema(type="in")
+     * )
      *
      * @param Request $request
      * @param UsersRepository $usersRepository
@@ -49,7 +79,7 @@ class UsersController extends AbstractController
             echo("LES ÉLÉMENTS NE SONT PAS ENCORE EN CACHE ! \n");
             $context = SerializationContext::create()->setGroups('getAllUsers');
             $item->tag("usersCache");
-            $item->expiresAfter(5);
+            $item->expiresAfter(60);
             $usersList = $usersRepository->findAllPaginated($page, $limit);
             return $serializer->serialize($usersList, 'json', $context);
         });
@@ -58,9 +88,33 @@ class UsersController extends AbstractController
     }
 
     /**
-     * Cette méthode nous permet de récupérer les informations des utilisateurs liés au client,
+     * Cette méthode permet à nos clients de récupérer les informations de leurs utilisateurs liés avec leurs id,
      * via la connection JWT du client,
-     * Pagination 5 par pages et mise en cache des éléments
+     * Pagination 5 par pages et mise en cache des éléments (Clients uniquement)
+     * 
+     * @OA\Get(
+     *      description="This method allows our clients to get detail of their own users linked on their id (Only for Clients)"
+     * )
+     * @OA\Response(
+     *      response=200,
+     *      description="List of client's users",
+     *      @OA\JsonContent(
+     *          type="array",
+     *          @OA\Items(ref=@Model(type=Users::class, groups={"getUsers"}))
+     *      )
+     * )
+     * @OA\Parameter(
+     *      name="page",
+     *      in="query",
+     *      description="La page que l'on veut récupérer / Which pages",
+     *      @OA\Schema(type="in")
+     * )
+     * @OA\Parameter(
+     *      name="limit",
+     *      in="query",
+     *      description="Le nombre d'éléments que l'on veut récupérer / How many elements",
+     *      @OA\Schema(type="in")
+     * )
      * 
      * @param Request $request
      * @param UsersRepository $usersRepository
@@ -88,7 +142,7 @@ class UsersController extends AbstractController
             echo("LES ÉLÉMENTS NE SONT PAS ENCORE EN CACHE ! \n");
             $context = SerializationContext::create()->setGroups('getUsers');
             $item->tag("usersCache");
-            $item->expiresAfter(5);
+            $item->expiresAfter(60);
             $usersList = $usersRepository->findAllPaginatedwithClient($page, $limit, $clients);
             return $serializer->serialize($usersList, 'json', $context);
         });
@@ -97,8 +151,20 @@ class UsersController extends AbstractController
     }
 
     /**
-     * Cette méthode nous permet de récupérer les informations d'un utilisateur relié au client, sinon une erreur 401 lui est retourné
-     * Via la connexion JWT du client
+     * Cette méthode permet à nos clients d'obtenir le détail de leurs utilisateurs, sinon une erreur 401 lui est retourné
+     * Via la connexion JWT du client (Clients uniquement)
+     * 
+     *  @OA\Get(
+     *      description="This method allow our clients to get detail of their users (Only for Clients)"
+     * )
+     * @OA\Response(
+     *      response=200,
+     *      description="Detail of client's users",
+     *      @OA\JsonContent(
+     *          type="array",
+     *          @OA\Items(ref=@Model(type=Users::class, groups={"getUsers"}))
+     *      )
+     * )
      * 
      * @param Users $users
      * @param SerializerInterface $serializer
@@ -134,7 +200,58 @@ class UsersController extends AbstractController
     
     /**
      * Cette méthode permet à un client de créer un nouvel utilisateur qui lui sera lié,
-     * Via la connexion JWT du client
+     * Via la connexion JWT du client (Clients uniquement)
+     * 
+     * @OA\Post(
+     *      description="This method allows our clients to create users who are linked to them. (Only for Clients)"
+     * ),
+     * @OA\RequestBody(
+     *      description="Json Payload",
+     *      @OA\MediaType(
+     *          mediaType="application/json",
+     *          @OA\Schema(
+     *              type="object",
+     *              @OA\Property(
+     *                  property="email",
+     *                  description="Email de l'utilisateur (unique)",
+     *                  type="string",
+     *                  format="email"
+     *              ),
+     *              @OA\Property(
+     *                  property="password",
+     *                  description="Mot de passe de l'utilisateur",
+     *                  type="string",
+     *                  format="password"
+     *              ),
+     *              @OA\Property(
+     *                  property="lastName",
+     *                  description="Nom de l'utilisateur",
+     *                  type="string"
+     *              ),
+     *              @OA\Property(
+     *                  property="firstName",
+     *                  description="Prenom de l'utilisateur",
+     *                  type="string"
+     *              )
+     *          )
+     *      )
+     * )
+     * @OA\Response(
+     *      response="201",
+     *      description="New user created",
+     *      content={
+     *          @OA\MediaType(
+     *              mediaType="application/json",
+     *              @OA\Schema(
+     *                  @OA\Property(
+     *                      property="status",
+     *                      type="boolean",
+     *                      description="POST API Response"
+     *                  )
+     *              )
+     *          )
+     *      }
+     * )
      * 
      * @param Request $request
      * @param SerializerInterface $serializer
@@ -190,8 +307,28 @@ class UsersController extends AbstractController
     }
 
     /**
-     * Cette méthode permet à un client de supprimer l'un de ses utilisateurs, sinon une erreur 401 lui est retourné
+     * Cette méthode permet à nos clients de supprimer leurs utilisateurs, sinon une erreur 401 lui est retourné
      * Via la connexion JWT du client
+     * 
+     * @OA\Delete(
+     *      description="This method allow our clients to delete their users (Only for Clients)"
+     * )
+     * @OA\Response(
+     *      response="204",
+     *      description="User deleted",
+     *      content={
+     *          @OA\MediaType(
+     *              mediaType="application/json",
+     *              @OA\Schema(
+     *                  @OA\Property(
+     *                      property="status",
+     *                      type="boolean",
+     *                      description="DELETE API Response"
+     *                  )
+     *              )
+     *          )
+     *      }
+     * )
      *
      * @param  Users $users
      * @param  EntityManagerInterface $em
@@ -219,9 +356,54 @@ class UsersController extends AbstractController
     }
    
     /**
-     * Cette méthode permet à un client de mettre à jour les informations de ses utilisateurs, 1 à la fois,
+     * Cette méthode permet à un client de mettre à jour les informations de ses utilisateurs,
      * sinon une erreur 401 lui est retourné.
      * Connexion via JWT token du client
+     * 
+     * @OA\Put(
+     *      description="This method allow our clients to update their users (Only for Clients)"
+     * ),
+     * @OA\RequestBody(
+     *      description="Json Payload",
+     *      @OA\MediaType(
+     *          mediaType="application/json",
+     *          @OA\Schema(
+     *              type="object",
+     *              @OA\Property(
+     *                  property="email",
+     *                  description="Email de l'utilisateur (unique)",
+     *                  type="string",
+     *                  format="email"
+     *              ),
+     *              @OA\Property(
+     *                  property="lastName",
+     *                  description="Nom de l'utilisateur",
+     *                  type="string"
+     *              ),
+     *              @OA\Property(
+     *                  property="firstName",
+     *                  description="Prenom de l'utilisateur",
+     *                  type="string"
+     *              )
+     *          )
+     *      )
+     * ),
+     * @OA\Response(
+     *      response="204",
+     *      description="User updated",
+     *      content={
+     *          @OA\MediaType(
+     *              mediaType="application/json",
+     *              @OA\Schema(
+     *                  @OA\Property(
+     *                      property="status",
+     *                      type="boolean",
+     *                      description="PUT API Response"
+     *                  )
+     *              )
+     *          )
+     *      }
+     * )
      * 
      * @param Request $request
      * @param SerializerInterface $serializer

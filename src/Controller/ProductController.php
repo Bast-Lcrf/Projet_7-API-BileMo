@@ -71,6 +71,12 @@ class ProductController extends AbstractController
     {
         $page = $request->get('page', 1);
         $limit = $request->get('limit', 5);
+        $nbElements = count($productRepository->findAll());
+        $totalPage = ceil($nbElements / $limit);
+
+        if($page <= 0 || $page > $totalPage) {
+            return new JsonResponse("Erreur 400, La page demandé n'existe pas, veuillez revoir les paramètres", Response::HTTP_BAD_REQUEST);
+        }
 
         $idCache = "getAllProduct-" . $page . "-" . $limit;
 

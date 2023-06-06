@@ -44,7 +44,8 @@ class ProductRepository extends ServiceEntityRepository
      *
      * @param  int $page
      * @param  int $limit
-     * @return void
+     * 
+     * @return array
      */
     public function findAllPaginated(int $page, int $limit)
     {

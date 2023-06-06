@@ -63,7 +63,7 @@ class UsersRepository extends ServiceEntityRepository implements PasswordUpgrade
      * @param  int $page
      * @param  int $limit
      * 
-     * @return void
+     * @return array
      */
     public function findAllPaginated(int $page, int $limit)
     {
@@ -81,7 +81,7 @@ class UsersRepository extends ServiceEntityRepository implements PasswordUpgrade
      * @param  int $limit
      * @param Clients $client
      * 
-     * @return void
+     * @return array
      */
     public function findAllPaginatedwithClient(int $page, int $limit, Clients $client)
     {

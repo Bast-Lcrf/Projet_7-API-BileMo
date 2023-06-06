@@ -46,6 +46,7 @@ security:
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
     role_hierarchy:
+        ROLE_CLIENT: ROLE_USER
         ROLE_ADMIN: ROLE_CLIENT
 
 when@test:

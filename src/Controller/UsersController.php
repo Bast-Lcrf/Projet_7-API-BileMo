@@ -135,7 +135,7 @@ class UsersController extends AbstractController
         $clients = $this->getUser();
         $page = $request->get('page', 1);
         $limit = $request->get('limit', 5);
-
+        
         $idCache = "getUsers-" . $page . "-" . $limit;
 
         $jsonUsersList = $cache->get($idCache, function (ItemInterface $item) use ($usersRepository, $page, $limit, $serializer, $clients) {
@@ -144,8 +144,15 @@ class UsersController extends AbstractController
             $item->tag("usersCache");
             $item->expiresAfter(60);
             $usersList = $usersRepository->findAllPaginatedwithClient($page, $limit, $clients);
+            if(empty($usersList)) {
+                return new JsonResponse('Erreur 204, Aucun utilisateur n\'est relier a votre compte client !', Response::HTTP_NO_CONTENT);
+            }
             return $serializer->serialize($usersList, 'json', $context);
         });
+
+        // if(empty($jsonUsersList)) {
+        //     return new JsonResponse('Erreur', Response::HTTP_NO_CONTENT);
+        // }
 
         return new JsonResponse($jsonUsersList, Response::HTTP_OK, [], true);
     }

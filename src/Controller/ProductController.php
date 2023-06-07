@@ -81,7 +81,7 @@ class ProductController extends AbstractController
         $idCache = "getAllProduct-" . $page . "-" . $limit;
 
         $jsonProductList = $cache->get($idCache, function (ItemInterface $item) use ($productRepository, $page, $limit, $serializer) {
-            echo ("LES ÉLÉMENTS NE SONT PAS ENCORE EN CACHE ! \n");
+            print_r("LES ÉLÉMENTS NE SONT PAS ENCORE EN CACHE ! \n");
             $context = SerializationContext::create()->setGroups('getProducts');
             $item->tag("productCache");
             $item->expiresAfter(60);

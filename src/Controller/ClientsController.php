@@ -77,7 +77,7 @@ class ClientsController extends AbstractController
         $idCache = "getAllClients-" . $page . "-" . $limit;
 
         $jsonClientsList = $cache->get($idCache, function (ItemInterface $item) use ($clientsRepository, $page, $limit, $serializer) {
-            echo("L\'ÉLÉMENT N\'NEST PAS ENCORE EN CACHE ! \n");
+            print_r("L\'ÉLÉMENT N\'NEST PAS ENCORE EN CACHE ! \n");
             $context = SerializationContext::create()->setGroups('getClients');
             $item->tag("clientsCache");
             $item->expiresAfter(60);

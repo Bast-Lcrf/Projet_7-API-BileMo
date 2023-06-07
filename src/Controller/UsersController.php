@@ -76,7 +76,7 @@ class UsersController extends AbstractController
         $idCache = "getAllUsers-" . $page . "-" . $limit;
 
         $jsonUsersList = $cache->get($idCache, function (ItemInterface $item) use ($usersRepository, $page, $limit, $serializer) {
-            echo("LES ÉLÉMENTS NE SONT PAS ENCORE EN CACHE ! \n");
+            print_r("LES ÉLÉMENTS NE SONT PAS ENCORE EN CACHE ! \n");
             $context = SerializationContext::create()->setGroups('getAllUsers');
             $item->tag("usersCache");
             $item->expiresAfter(60);
@@ -139,7 +139,7 @@ class UsersController extends AbstractController
         $idCache = "getUsers-" . $page . "-" . $limit;
 
         $jsonUsersList = $cache->get($idCache, function (ItemInterface $item) use ($usersRepository, $page, $limit, $serializer, $clients) {
-            echo("LES ÉLÉMENTS NE SONT PAS ENCORE EN CACHE ! \n");
+            print_r("LES ÉLÉMENTS NE SONT PAS ENCORE EN CACHE ! \n");
             $context = SerializationContext::create()->setGroups('getUsers');
             $item->tag("usersCache");
             $item->expiresAfter(60);

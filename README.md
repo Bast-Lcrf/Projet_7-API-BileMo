@@ -6,7 +6,6 @@
 3. [Installation](#installation)
 
 ## General Info
-**Not working on Galaxy Fold.**
 
 This project is an API of BileMo, B2B sales of mobile phones only.
 
